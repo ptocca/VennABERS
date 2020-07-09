@@ -15,11 +15,14 @@ import numpy as np
 def push(x,stack):
     stack.append(x)
 
+    
 def pop(stack):
     return stack.pop()
 
+
 def top(stack):
     return stack[-1]
+
 
 def nextToTop(stack):
     return stack[-2]
@@ -31,6 +34,7 @@ def nonleftTurn(a,b,c):
     d2 = c-b
     return np.cross(d1,d2)<=0
 
+
 def nonrightTurn(a,b,c):   
     d1 = b-a
     d2 = c-b
@@ -41,6 +45,7 @@ def slope(a,b):
     ax,ay = a
     bx,by = b
     return (by-ay)/(bx-ax)
+
 
 def notBelow(t,p1,p2):
     p1x,p1y = p1
@@ -67,6 +72,7 @@ def algorithm1(P):
         push(P[i],S)
     return S
 
+
 def algorithm2(P,S):
     global kPrime
     
@@ -84,6 +90,7 @@ def algorithm2(P,S):
         push(P[i-1],Sprime)
     return F1
 
+
 def algorithm3(P):
     global kPrime
 
@@ -95,6 +102,7 @@ def algorithm3(P):
             pop(S)
         push(P[i],S)
     return S
+
 
 def algorithm4(P,S):
     global kPrime
@@ -112,6 +120,7 @@ def algorithm4(P,S):
             pop(Sprime)
         push(P[i],Sprime)
     return F0
+
 
 def prepareData(calibrPoints):
     global kPrime
@@ -136,6 +145,7 @@ def prepareData(calibrPoints):
     
     return yPrime,yCsd,xPrime,ptsUnique
 
+
 def computeF(xPrime,yCsd):
     global kPrime
     P = {0:np.array((0,0))}
@@ -153,15 +163,12 @@ def computeF(xPrime,yCsd):
     
     return F0,F1
 
+
 def getFVal(F0,F1,ptsUnique,testObjects):
     pos0 = np.searchsorted(ptsUnique,testObjects,side='left')
     pos1 = np.searchsorted(ptsUnique[:-1],testObjects,side='right')+1
-    print("F0[0]:",F0[0])
-    try:
-        return F0[pos0],F1[pos1]
-    except IndexError:
-        print(pos0,pos1)
-        raise
+    return F0[pos0],F1[pos1]
+
 
 def ScoresToMultiProbs(calibrPoints,testObjects):
     # sort the points, transform into unique objects, with weights and updated values
