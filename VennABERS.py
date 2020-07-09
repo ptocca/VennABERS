@@ -1,3 +1,13 @@
+# Straight-forward implementation of IVAP algorithm described in:
+# Large-scale probabilistic prediction with and without validity guarantees, Vovk et al.
+# https://arxiv.org/pdf/1511.00213.pdf
+#
+# Paolo Toccaceli
+#
+# https://github.com/ptocca/VennABERS
+#
+# 2020-07-09: Fixed bug in p0 calculation
+
 import numpy as np
 
 # Some elementary functions to speak the same language as the paper
@@ -76,8 +86,6 @@ def algorithm2(P,S):
 
 def algorithm3(P):
     global kPrime
-    
-    P[kPrime+1] = P[kPrime]+np.array((1.0,0.0))
 
     S = []
     push(P[kPrime+1],S)
@@ -103,7 +111,7 @@ def algorithm4(P,S):
         while len(Sprime)>1 and nonrightTurn(P[i],top(Sprime),nextToTop(Sprime)):
             pop(Sprime)
         push(P[i],Sprime)
-    return F0[1:]
+    return F0
 
 def prepareData(calibrPoints):
     global kPrime
@@ -128,15 +136,17 @@ def prepareData(calibrPoints):
     
     return yPrime,yCsd,xPrime,ptsUnique
 
-def computeF(xPrime,yCsd):    
+def computeF(xPrime,yCsd):
+    global kPrime
     P = {0:np.array((0,0))}
     P.update({i+1:np.array((k,v)) for i,(k,v) in enumerate(zip(xPrime,yCsd))})
     
     S = algorithm1(P)
     F1 = algorithm2(P,S)
     
-    # P = {}
-    # P.update({i+1:np.array((k,v)) for i,(k,v) in enumerate(zip(xPrime,yCsd))})    
+    P = {0:np.array((0,0))}
+    P.update({i+1:np.array((k,v)) for i,(k,v) in enumerate(zip(xPrime,yCsd))})    
+    P[kPrime+1] = P[kPrime] + np.array((1.0,0.0))    # The paper says (1,1)
     
     S = algorithm3(P)
     F0 = algorithm4(P,S)
@@ -144,9 +154,14 @@ def computeF(xPrime,yCsd):
     return F0,F1
 
 def getFVal(F0,F1,ptsUnique,testObjects):
-    pos0 = np.searchsorted(ptsUnique[1:],testObjects,side='right')
-    pos1 = np.searchsorted(ptsUnique[:-1],testObjects,side='left')+1
-    return F0[pos0],F1[pos1]
+    pos0 = np.searchsorted(ptsUnique,testObjects,side='left')
+    pos1 = np.searchsorted(ptsUnique[:-1],testObjects,side='right')+1
+    print("F0[0]:",F0[0])
+    try:
+        return F0[pos0],F1[pos1]
+    except IndexError:
+        print(pos0,pos1)
+        raise
 
 def ScoresToMultiProbs(calibrPoints,testObjects):
     # sort the points, transform into unique objects, with weights and updated values
@@ -158,31 +173,4 @@ def ScoresToMultiProbs(calibrPoints,testObjects):
     # compute the values for the given test objects
     p0,p1 = getFVal(F0,F1,ptsUnique,testObjects)
                     
-    return p0,p1
-
-def computeF1(yCsd,xPrime):
-    global kPrime
-    
-    P = {0:np.array((0,0))}
-    P.update({i+1:np.array((k,v)) for i,(k,v) in enumerate(zip(xPrime,yCsd))})
-    
-    S = algorithm1(P)
-    F1 = algorithm2(P,S)
-    
-    return F1
-
-def ScoresToMultiProbsV2(calibrPoints,testObjects):
-    # sort the points, transform into unique objects, with weights and updated values
-    yPrime,yCsd,xPrime,ptsUnique = prepareData(calibrPoints)
-   
-    # compute the F0 and F1 functions from the CSD
-    F1 = computeF1(yCsd,xPrime)
-    pos1 = np.searchsorted(ptsUnique[:-1],testObjects,side='left')+1
-    p1 = F1[pos1]
-    
-    yPrime,yCsd,xPrime,ptsUnique = prepareData((-x,1-y) for x,y in calibrPoints)    
-    F0 = 1 - computeF1(yCsd,xPrime)
-    pos0 = np.searchsorted(ptsUnique[:-1],testObjects,side='left')+1
-    p0 = F0[pos0]
-    
     return p0,p1
