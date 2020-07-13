@@ -21,7 +21,9 @@ testScores: a list of floats corresponding to the scores for the test objects.
 
 The function returns a pair of Numpy arrays with the probabilistic predictions.
 
-
+## Version History
+    - 0.1 - Initial implementation
+    - 0.2 - 2020-07 Fixed bug affecting p_0 calculation, added test notebook
 
 ## Acknowlegdements
 * Work done with funding from the European Union`s Horizon 2020 Research and Innovation programme under Grant Agreement no. 671555 (ExCAPE). 
