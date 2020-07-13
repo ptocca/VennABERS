@@ -1,13 +1,13 @@
 # Venn-ABERS Predictor
 *(Preliminary documentation)*
 
-The `VennABERS.py` file is a pure Python implementation of the fast Venn-ABERS Predictor described in [Vovk](http://alrw.net/articles/13.pdf).
+The `VennABERS.py` file is a pure Python implementation of the fast Venn-ABERS Predictor described in
+[Vovk2015](http://alrw.net/articles/13.pdf).
 
 A Venn-ABERS predictor outputs two probability predictions for every test object.
 In particular, the Venn-ABERS predictor implemented here is the inductive form of probability predictor, which relies on a calibration set.
 In a nutshell, the Venn-ABERS predictor can be viewed as a distribution-free calibration function that maps scores output by a *scoring classifier* to well-calibrated probabilities.
 A gentle introduction can be found in the tutorial [Toccaceli2017](http://clrc.rhul.ac.uk/copa2017/presentations/VennTutorialCOPA2017.pdf).
-It is 
 
 The function that implements the Venn-ABERS Predictor is `ScoresToMultiProbs()`.
 
