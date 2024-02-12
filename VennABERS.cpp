@@ -4,6 +4,11 @@ of the Inductive VennABERS Predictor (IVAP).
 
 It was developed with the aid of Gemini, as an exploration of the use of LLM code assistants.
 
+It requires the range-v3 library (apt install librange-v3-dev).
+Also, the demo code requires the fmt library (apt install libfmt-dev).
+
+/usr/bin/g++-11 -std=c++17 -g VennABERS.cpp -L/usr/local/lib -lfmt -o VennABERS
+
 Paolo Toccaceli, 2024-02
 
 */
@@ -14,6 +19,8 @@ Paolo Toccaceli, 2024-02
 #include <algorithm>
 #include <cmath>
 #include <numeric>
+#include <range/v3/all.hpp>
+
 
 using T = double;
 
@@ -170,17 +177,9 @@ std::vector<double> algorithm4(std::vector<Point>& P, const std::vector<Point>& 
 }
 
 std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> 
-prepareData(const std::vector<Point>& calibrPoints) {
+prepareData( std::vector<double> xs, std::vector<double> ys) {
   // Sort and extract x and y coordinates
-  std::vector<Point> ptsSorted(calibrPoints);
-  std::sort(ptsSorted.begin(), ptsSorted.end());
-
-  std::vector<double> xs(ptsSorted.size());
-  std::vector<double> ys(ptsSorted.size());
-  for (int i = 0; i < ptsSorted.size(); ++i) {
-    xs[i] = ptsSorted[i].first;
-    ys[i] = ptsSorted[i].second;
-  }
+  ranges::v3::sort(ranges::view::zip(xs, ys));
 
   // Find unique points and calculate weights and cumulative sums
   std::vector<double> ptsUnique;
@@ -206,7 +205,7 @@ prepareData(const std::vector<Point>& calibrPoints) {
 
 std::pair< std::vector<double>, std::vector<double> > 
 getFVal(const std::vector<double>& F0, const std::vector<double>& F1,
-                                 const std::vector<double>& ptsUnique, const std::vector<double>& testObjects) {
+        const std::vector<double>& ptsUnique, const std::vector<double>& testObjects) {
   std::vector<size_t> pos0(testObjects.size());
   std::vector<size_t> pos1(testObjects.size());
 
@@ -268,39 +267,11 @@ computeF(const std::vector<double>& xPrime, const std::vector<double>& yCsd) {
   return std::make_pair(F0, F1);
 }
 
-std::pair<std::vector<double>, std::vector<double>> getFVal(const std::vector<double>& F0, const std::vector<double>& F1,
-                                                           const std::vector<Point>& ptsUnique, const std::vector<double>& testObjects) {
-  // Use std::lower_bound and std::upper_bound for searching
-  std::vector<int> pos0(testObjects.size());
-  std::transform(testObjects.begin(), testObjects.end(), pos0.begin(),
-                 [&ptsUnique](double testObject) {
-                   return std::lower_bound(ptsUnique.begin(), ptsUnique.end(), testObject,
-                                          [](const Point& p1, double p2) { return p1.first < p2; }) - ptsUnique.begin();
-                 });
-
-  std::vector<int> pos1(testObjects.size());
-  std::transform(testObjects.begin(), testObjects.end(), pos1.begin(),
-                 [&ptsUnique](double testObject) {
-                   return std::upper_bound(ptsUnique.begin(), ptsUnique.end() - 1, testObject,
-                                          [](const Point& p1, double p2) { return p1.first < p2; }) - ptsUnique.begin() + 1;
-                 });
-
-  // Extract values from F0 and F1 based on positions
-  std::vector<double> F0_vals(pos0.size());
-  std::vector<double> F1_vals(pos0.size());
-  for (size_t i = 0; i < pos0.size(); ++i) {
-    F0_vals[i] = F0[pos0[i]];
-    F1_vals[i] = F1[pos1[i]];
-  }
-
-  return std::make_pair(F0_vals, F1_vals);
-}
-
 std::pair<std::vector<double>, std::vector<double>> 
-ScoresToMultiProbs(const std::vector<Point>& calibrPoints, const std::vector<double>& testObjects) {
+ScoresToMultiProbs(const std::vector<double>& xs, const std::vector<double>& ys, const std::vector<double>& testObjects) {
 
   std::vector<double> yCsd, xPrime, ptsUnique;
-  std::tie(yCsd,xPrime,ptsUnique) = prepareData(calibrPoints);
+  std::tie(yCsd,xPrime,ptsUnique) = prepareData(xs, ys);
 
   std::vector<double> F0, F1;
   std::tie(F0,F1) = computeF(xPrime,yCsd);
@@ -308,4 +279,21 @@ ScoresToMultiProbs(const std::vector<Point>& calibrPoints, const std::vector<dou
   std::vector<double> p0, p1;
   std::tie(p0, p1) = getFVal(F0,F1,ptsUnique,testObjects);
   return std::make_pair(p0, p1);
+}
+
+#include <fmt/core.h>
+#include <fmt/ranges.h>
+int main(int argc, char *argv[])
+{
+  std::vector<double> xs{2.0, 3.0, 4.0, 5.0, 7.0, 8.0};
+  std::vector<double> ys{0.0, 1.0, 0.0, 0.0, 1.0, 1.0};
+
+  std::vector<double> testObjs{1.0, 2.5, 7.2};
+
+  std::vector<double> p0,p1;
+  std::tie(p0, p1) = ScoresToMultiProbs(xs, ys, testObjs);
+
+
+  fmt::print("p0: {}\n", fmt::join(p0, ", "));
+  fmt::print("p1: {}\n", fmt::join(p1, ", "));
 }
