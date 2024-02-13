@@ -19,7 +19,7 @@ Paolo Toccaceli, 2024-02
 #include <algorithm>
 #include <cmath>
 #include <numeric>
-#include <range/v3/all.hpp>
+#include <ranges>
 
 
 using T = double;
@@ -176,10 +176,35 @@ std::vector<double> algorithm4(std::vector<Point>& P, const std::vector<Point>& 
   return F0;
 }
 
+
+bool compare_on_xs(const std::pair<double, double>& a, const std::pair<double, double>& b) {
+  return a.first < b.first;
+}
+
+void sort_both_on_xs(std::vector<double>& xs, std::vector<double>& ys) {
+  // Combine xs and ys into a vector of pairs
+  std::vector<std::pair<double, double>> pairs(xs.size());
+  for (size_t i = 0; i < xs.size(); ++i) {
+    pairs[i] = {xs[i], ys[i]};
+  }
+
+  // Sort the pairs based on xs
+  std::sort(pairs.begin(), pairs.end(), compare_on_xs);
+
+  // Extract back to separate vectors (optional)
+  // Similar to approach 1, this step is optional.
+  for (size_t i = 0; i < xs.size(); ++i) {
+    xs[i] = pairs[i].first;
+    ys[i] = pairs[i].second;
+  }
+}
+
+
 std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> 
 prepareData( std::vector<double> xs, std::vector<double> ys) {
   // Sort and extract x and y coordinates
-  ranges::v3::sort(ranges::view::zip(xs, ys));
+  // std::ranges::sort(std::views::zip(xs, ys));
+  sort_both_on_xs(xs, ys);
 
   // Find unique points and calculate weights and cumulative sums
   std::vector<double> ptsUnique;
@@ -339,6 +364,8 @@ train(std::vector<double> xs, std::vector<double> ys) {
 
   // Consider passing arrays as explained in
   // https://stackoverflow.com/questions/44659924/returning-numpy-arrays-via-pybind11
+  // or refactoring into a class
+  // https://developer.lsst.io/v/DM-9089/coding/python_wrappers_for_cpp_with_pybind11.html
   return py::make_tuple(F0,F1,ptsUnique); 
 }
 
@@ -349,7 +376,7 @@ predict(std::vector<double> F0, std::vector<double> F1, std::vector<double> ptsU
   return py::make_tuple(p0, p1);
 }
 
-PYBIND11_MODULE(VennABERS, m) {
+PYBIND11_MODULE(VennABERSlib, m) {
     m.def("train", &train, "Train IVAP model");
     m.def("predict", &predict, "Predict using IVAP model");
 }
