@@ -3,11 +3,10 @@ This is a relatively pedestrian translation in C++ of the Python implementation
 of the Inductive VennABERS Predictor (IVAP).
 
 It was developed with the aid of Gemini, as an exploration of the use of LLM code assistants.
+It relies on pybind11 (pip install pybind11) for C++ bindings.
+Also, the fmt library (apt install libfmt-dev) is required only when generating the STANDALONE version.
 
-It requires the range-v3 library (apt install librange-v3-dev).
-Also, the demo code requires the fmt library (apt install libfmt-dev).
-
-/usr/bin/g++-11 -std=c++17 -g VennABERS.cpp -L/usr/local/lib -lfmt -o VennABERS
+/usr/bin/g++ -std=c++20 -fdiagnostics-color=always -g $(python3 -m pybind11 --includes) VennABERSlib.cpp -shared -fPIC  -o VennABERSlib.so
 
 Paolo Toccaceli, 2024-02
 
