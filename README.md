@@ -1,7 +1,7 @@
 # Venn-ABERS Predictor
 *(Preliminary documentation)*
 
-This repository provides a Python implemntation of the Venn-ABERS Predictor described in
+This repository provides a Python implementation of the Venn-ABERS Predictor described in
 [Vovk2015](http://alrw.net/articles/13.pdf).
 
 In a nutshell, the Venn-ABERS predictor can be viewed as a distribution-free calibration function that maps *scores* (values output by a *scoring classifier*) to well-calibrated probabilities (corresponding to long-term frequencies under iid assumptions).    
