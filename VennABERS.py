@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
-import VennABERSlib
+import libVennABERS
 
 class VennABERS(BaseEstimator, ClassifierMixin):
     def __init__(self, demo_param='demo'):
@@ -17,7 +17,7 @@ class VennABERS(BaseEstimator, ClassifierMixin):
         self.y_ = y
 
         # compute the F0 and F1 functions from the CSD
-        self.F0,self.F1,self.ptsUnique = VennABERSlib.train(self.X_.reshape(-1,), self.y_)
+        self.F0,self.F1,self.ptsUnique = libVennABERS.train(self.X_.reshape(-1,), self.y_)
 
         self.is_fitted_ = True
 
@@ -28,5 +28,5 @@ class VennABERS(BaseEstimator, ClassifierMixin):
         check_is_fitted(self)
         # Input validation
         X = check_array(X)
-        p0, p1 = VennABERSlib.predict(self.F0, self.F1, self.ptsUnique, X.reshape(-1,) )
+        p0, p1 = libVennABERS.predict(self.F0, self.F1, self.ptsUnique, X.reshape(-1,) )
         return np.array(p0), np.array(p1)

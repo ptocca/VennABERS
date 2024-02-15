@@ -375,7 +375,7 @@ predict(std::vector<double> F0, std::vector<double> F1, std::vector<double> ptsU
   return py::make_tuple(p0, p1);
 }
 
-PYBIND11_MODULE(VennABERSlib, m) {
+PYBIND11_MODULE(libVennABERS, m) {
     m.def("train", &train, "Train IVAP model");
     m.def("predict", &predict, "Predict using IVAP model");
 }
