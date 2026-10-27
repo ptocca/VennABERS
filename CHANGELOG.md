@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0 - unreleased
+## 1.0.0 - 2026-10-27
 
 Complete rewrite, published under the name `fast-ivap` (import `fast_ivap`).
 
