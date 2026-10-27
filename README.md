@@ -154,7 +154,7 @@ See [CHANGELOG.md](CHANGELOG.md).
 
 ## Acknowledgements
 
-- The algorithm was invented by Prof. Vladimir Vovk at the
+- The algorithm was invented by Prof. Vladimir Vovk et al. at the
   [Centre for Reliable Machine Learning, Royal Holloway, University of London](https://cml.rhul.ac.uk/).
 - This work was supported in part by funding from the European Union's Horizon
   2020 Research and Innovation programme under Grant Agreement no. 671555
