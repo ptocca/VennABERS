@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "fast-ivap"
-version = "0.3.0"
+version = "1.0.0"
 description = "Fast inductive Venn-ABERS predictors: distribution-free calibration of classifier scores"
 readme = "README.md"
 license = "MIT"
@@ -14,7 +14,7 @@ requires-python = ">=3.11"
 dependencies = ["numpy>=1.25"]
 keywords = ["calibration", "conformal prediction", "venn-abers", "isotonic regression", "probability"]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Science/Research",
   "Programming Language :: C++",
   "Programming Language :: Python :: 3",
