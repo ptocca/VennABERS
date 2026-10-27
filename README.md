@@ -1,5 +1,6 @@
 # fast-ivap: fast inductive Venn-ABERS predictors
 
+[![PyPI](https://img.shields.io/pypi/v/fast-ivap)](https://pypi.org/project/fast-ivap/)
 [![CI](https://github.com/ptocca/VennABERS/actions/workflows/ci.yml/badge.svg)](https://github.com/ptocca/VennABERS/actions/workflows/ci.yml)
 
 `fast-ivap` turns the scores of any binary classifier into **well-calibrated
@@ -42,8 +43,9 @@ pip install fast-ivap              # NumPy API
 pip install "fast-ivap[sklearn]"   # plus the scikit-learn estimator
 ```
 
-Until the package is on PyPI, install from GitHub (this builds from source, so
-it needs a C++20 compiler; CMake is fetched automatically if missing):
+To install the latest development version from GitHub instead (this builds
+from source, so it needs a C++20 compiler; CMake is fetched automatically if
+missing):
 
 ```bash
 pip install git+https://github.com/ptocca/VennABERS
