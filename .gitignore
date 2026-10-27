@@ -1,0 +1,18 @@
+# Build artefacts
+build/
+dist/
+wheelhouse/
+*.so
+*.pyd
+
+# Python
+__pycache__/
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Editors / notebooks
+.vscode/
+.idea/
+.ipynb_checkpoints/

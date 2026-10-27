@@ -1,0 +1,60 @@
+# Build portable wheels for Linux, macOS and Windows (x86-64 and ARM64) and
+# an sdist. Publishing a GitHub release uploads them to PyPI via trusted
+# publishing (configure the "pypi" environment and a PyPI trusted publisher
+# for this workflow first: https://docs.pypi.org/trusted-publishers/).
+
+name: Wheels
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: [pyproject.toml, CMakeLists.txt, .github/workflows/wheels.yml]
+  release:
+    types: [published]
+
+jobs:
+  wheels:
+    name: Wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest      # manylinux / musllinux x86_64
+          - ubuntu-24.04-arm   # manylinux / musllinux aarch64
+          - macos-15-intel     # macOS x86_64
+          - macos-latest       # macOS arm64
+          - windows-latest     # Windows AMD64
+          - windows-11-arm     # Windows ARM64
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pypa/cibuildwheel@v4.3.4
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
+
+  sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
+      - run: uv build --sdist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+  publish:
+    if: github.event_name == 'release'
+    needs: [wheels, sdist]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: pypa/gh-action-pypi-publish@release/v1

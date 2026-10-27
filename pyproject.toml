@@ -1,0 +1,70 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "nanobind>=2.4"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "fast-ivap"
+version = "0.3.0"
+description = "Fast inductive Venn-ABERS predictors: distribution-free calibration of classifier scores"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Paolo Toccaceli" }]
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.25"]
+keywords = ["calibration", "conformal prediction", "venn-abers", "isotonic regression", "probability"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: C++",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+sklearn = ["scikit-learn>=1.6"]
+
+[project.urls]
+Homepage = "https://github.com/ptocca/VennABERS"
+Paper = "https://arxiv.org/abs/1511.00213"
+
+[dependency-groups]
+test = ["pytest>=8", "scikit-learn>=1.6"]
+dev = [{ include-group = "test" }, "ruff>=0.6"]
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+build-dir = "build/{wheel_tag}"
+# One stable-ABI (abi3) wheel per platform covers Python 3.12 and later.
+wheel.py-api = "cp312"
+sdist.exclude = [".github", "examples/*.ipynb"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra", "--import-mode=importlib"]
+filterwarnings = [
+  "error",
+  # Deprecations between third-party libraries (e.g. older scikit-learn with newer SciPy).
+  "ignore::DeprecationWarning:sklearn.*",
+  "ignore::DeprecationWarning:scipy.*",
+]
+
+[tool.ruff]
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "N", "NPY"]
+# Allow the scikit-learn convention of capitalised X in variable and argument names.
+ignore = ["N803", "N806"]
+
+[tool.cibuildwheel]
+build = ["cp311-*", "cp312-*"]
+skip = ["*-win32", "*-manylinux_i686", "*-musllinux_i686"]
+test-groups = ["test"]
+test-command = "pytest {project}/tests"
+build-verbosity = 1
+
+[tool.cibuildwheel.macos.environment]
+MACOSX_DEPLOYMENT_TARGET = "10.15"
