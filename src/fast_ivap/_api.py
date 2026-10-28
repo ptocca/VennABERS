@@ -90,6 +90,11 @@ class IVAP:
         Distinct calibration scores, sorted.
     f0_, f1_ : ndarray of shape (k + 1,)
         Lookup tables of p0 and p1 (see :mod:`fast_ivap._reference`).
+    order_ : ndarray of int64, shape (n,)
+        Stable argsort of the calibration scores passed to :meth:`fit`:
+        ``order_[r]`` is the index of the calibration example of rank ``r``.
+    blocks_ : ndarray of int64, shape (4, k + 1)
+        Lookup tables of the isotonic blocks (see :meth:`predict_blocks`).
 
     Examples
     --------
@@ -108,8 +113,19 @@ class IVAP:
             raise ValueError("at least one calibration example is required")
         if not np.all(np.isfinite(s)):
             raise ValueError("calibration scores must be finite")
-        self.scores_, self.f0_, self.f1_ = _get_backend(self.backend).fit(s, y)
+        self.scores_, self.f0_, self.f1_, self.order_, self.blocks_ = _get_backend(
+            self.backend
+        ).fit(s, y)
         return self
+
+    def _check_fitted(self, attribute: str = "scores_") -> None:
+        if not hasattr(self, "scores_"):
+            raise RuntimeError("this IVAP instance is not fitted yet; call fit() first")
+        if not hasattr(self, attribute):
+            raise RuntimeError(
+                f"this IVAP instance has no {attribute} (it was fitted by an older "
+                "fast-ivap version); call fit() again"
+            )
 
     def predict_p0_p1(self, scores: ArrayLike) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
         """Return the pair ``(p0, p1)`` for each test score.
@@ -117,8 +133,7 @@ class IVAP:
         Both are probabilities that the label is 1; ``p0 <= p1`` always holds.
         NaN scores give NaN probabilities.
         """
-        if not hasattr(self, "scores_"):
-            raise RuntimeError("this IVAP instance is not fitted yet; call fit() first")
+        self._check_fitted()
         s = _as_scores(scores, "scores")
         return _get_backend(self.backend).predict(self.scores_, self.f0_, self.f1_, s)
 
@@ -129,6 +144,68 @@ class IVAP:
         output by :meth:`predict_p0_p1` (Section 4 of the paper).
         """
         return merge_log_minimax(*self.predict_p0_p1(scores))
+
+    def predict_blocks(
+        self, scores: ArrayLike
+    ) -> tuple[NDArray[np.int64], NDArray[np.int64], NDArray[np.int64], NDArray[np.int64]]:
+        """Return the isotonic blocks (Venn categories) of each test score.
+
+        For a test score ``t`` and a label ``e`` in {0, 1}, let ``f`` be the
+        isotonic regression on the calibration data plus ``(t, e)``. The block
+        ``B_e(t)`` is the set of calibration examples ``i`` with
+        ``f(s_i) == f(t)``: the Venn-ABERS category of the test example. It
+        does not contain the test example, may be empty, and satisfies::
+
+            p_e(t) = (sum of labels in B_e(t) + e) / (len(B_e(t)) + 1)
+
+        Each block is contiguous in score order and is returned as a half-open
+        range ``[lo_e, hi_e)`` of ranks: its examples are
+        ``order_[lo_e:hi_e]``, as indices into the calibration data passed to
+        :meth:`fit`. Tied calibration scores are always all in or all out, and
+        test scores equal to a calibration score are treated exactly as in
+        :meth:`predict_p0_p1`. A NaN test score gives ``lo = hi = -1``.
+
+        Returns
+        -------
+        lo0, hi0, lo1, hi1 : ndarrays of int64, shape (m,)
+        """
+        self._check_fitted("blocks_")
+        s = _as_scores(scores, "scores")
+        lo0, hi0, lo1, hi1 = _get_backend(self.backend).predict_blocks(
+            self.scores_, self.blocks_, s
+        )
+        return lo0, hi0, lo1, hi1
+
+    def block_sums(
+        self, scores: ArrayLike, values: ArrayLike
+    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+        """Sum per-example ``values`` over the isotonic block of each test score.
+
+        ``values`` has shape (n,) or (n, d) and is indexed like the calibration
+        data passed to :meth:`fit`. For example, with a one-hot encoding of a
+        multiclass label it gives the class counts of the Venn categories.
+        Returns ``(S0, S1)`` with ``S_e[j]`` the sum of ``values`` over
+        ``B_e(scores[j])`` (see :meth:`predict_blocks`), of shape (m,) or
+        (m, d). Block sizes are ``hi_e - lo_e`` from :meth:`predict_blocks`.
+
+        Uses prefix sums, so each test score costs O(log k + d). The sums are
+        exact for integer-valued ``values`` (up to 2**53); NaN test scores give
+        NaN sums.
+        """
+        self._check_fitted("order_")
+        v = np.asarray(values, dtype=np.float64)
+        n = self.order_.shape[0]
+        if v.ndim not in (1, 2) or v.shape[0] != n:
+            raise ValueError(f"values must have shape ({n},) or ({n}, d), got {v.shape}")
+        prefix = np.zeros((n + 1, *v.shape[1:]))
+        np.cumsum(v[self.order_], axis=0, out=prefix[1:])
+        lo0, hi0, lo1, hi1 = self.predict_blocks(scores)
+        sums = []
+        for lo, hi in ((lo0, hi0), (lo1, hi1)):
+            total = prefix[hi] - prefix[lo]
+            total[lo < 0] = np.nan
+            sums.append(total)
+        return sums[0], sums[1]
 
 
 def merge_log_minimax(p0: ArrayLike, p1: ArrayLike, axis: int | None = None) -> NDArray[np.float64]:

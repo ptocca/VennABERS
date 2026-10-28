@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.1.0 - 2026-10-28
+
+### Added
+- `IVAP.predict_blocks(scores)` returns the isotonic block (Venn-ABERS
+  category) of each test example for labels 0 and 1, as ranges
+  `(lo0, hi0, lo1, hi1)` of the calibration examples sorted by score.
+- `IVAP.order_`, the stable argsort of the calibration scores, mapping these
+  ranges to calibration indices.
+- `IVAP.block_sums(scores, values)` sums per-example values (for example a
+  one-hot multiclass label) over the blocks with prefix sums, for multiclass
+  Venn predictors.
+- C++: `fast_ivap::predict_blocks`, `Calibrator::order` and
+  `Calibrator::blocks`.
+
+### Changed
+- `fit` also computes the block tables. `p0` and `p1` are bit-for-bit
+  unchanged; fitting is up to about 30% slower (1M distinct scores).
+
 ## 1.0.0 - 2026-10-27
 
 Complete rewrite, published under the name `fast-ivap` (import `fast_ivap`).

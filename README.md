@@ -81,6 +81,31 @@ p = merge_log_minimax(p0_folds, p1_folds, axis=0)  # arrays of shape (K, n)
 
 `merge_brier` gives the Brier-loss minimax merge instead.
 
+### Venn categories (isotonic blocks)
+
+For a test score `t` and a label `e` in {0, 1}, the Venn-ABERS category of
+the test example is its isotonic block `B_e(t)`: the calibration examples
+whose fitted value equals the test example's in the isotonic regression on
+the calibration data plus `(t, e)`. It excludes the test example and may be
+empty, and `p_e = (sum of labels in B_e + e) / (len(B_e) + 1)`.
+
+`predict_blocks` returns each block as a range `[lo, hi)` of calibration
+examples sorted by score, so its members are `order_[lo:hi]`. `block_sums`
+sums any per-example values over the blocks with prefix sums, in
+O(log k + d) per test score:
+
+```python
+lo0, hi0, lo1, hi1 = ivap.predict_blocks(test_scores)  # int arrays; -1 for NaN
+members = ivap.order_[lo1[0] : hi1[0]]  # indices into the calibration data
+S0, S1 = ivap.block_sums(test_scores, values)  # values: shape (n,) or (n, d)
+```
+
+This gives multiclass Venn predictors whose taxonomy is the isotonic
+regression of a binary event (for example `y == c`) without refitting: with
+`values` a one-hot encoding of the calibration classes, `S_e` holds the class
+counts of each test example's category under the hypotheses with event value
+`e`, and `hi_e - lo_e` the category sizes.
+
 ### scikit-learn
 
 `VennAbersCalibrator` takes one score per example and follows the
@@ -114,6 +139,8 @@ target_link_libraries(my_app PRIVATE fast_ivap::fast_ivap)
 
 auto cal = fast_ivap::fit(scores, labels);           // any contiguous range of doubles
 auto [p0, p1] = fast_ivap::predict(cal, test_scores);
+auto blocks = fast_ivap::predict_blocks(cal, test_scores);  // .lo0, .hi0, .lo1, .hi1
+// members of B_1(test_scores[0]): cal.order[blocks.lo1[0]] ... cal.order[blocks.hi1[0] - 1]
 ```
 
 ## Implementation notes
@@ -134,7 +161,12 @@ auto [p0, p1] = fast_ivap::predict(cal, test_scores);
 - A test score equal to a calibration score, and a test score outside the
   range of the calibration scores, are handled exactly as in the definition
   (two bugs in versions up to 0.2 affected these cases).
-- A NaN test score yields NaN probabilities. Calibration scores must be finite.
+- The isotonic blocks come for free from the same scan: the GCM piece over
+  the test example's segment spans the sorted calibration items
+  `[left.x + 1, right.x)`, where `left` and `right` are its corners.
+  Collinear corners are merged, so each block is a whole level set.
+- A NaN test score yields NaN probabilities and `-1` block ranges.
+  Calibration scores must be finite.
 
 ## Development
 
